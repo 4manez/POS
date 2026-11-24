@@ -9,18 +9,23 @@ partial class InventoryForm
     private System.Windows.Forms.TableLayoutPanel _titleLayout = null!;
     private System.Windows.Forms.Label _titleLabel = null!;
     private System.Windows.Forms.Label _subtitleLabel = null!;
+    private System.Windows.Forms.TableLayoutPanel _searchLayout = null!;
     private System.Windows.Forms.TextBox _searchBox = null!;
+    private System.Windows.Forms.Label _lowStockLabel = null!;
+    private System.Windows.Forms.NumericUpDown _lowStockThreshold = null!;
     private System.Windows.Forms.DataGridView _inventoryGrid = null!;
     private System.Windows.Forms.DataGridViewTextBoxColumn _barcodeColumn = null!;
     private System.Windows.Forms.DataGridViewTextBoxColumn _productColumn = null!;
     private System.Windows.Forms.DataGridViewTextBoxColumn _categoryColumn = null!;
     private System.Windows.Forms.DataGridViewTextBoxColumn _priceColumn = null!;
     private System.Windows.Forms.DataGridViewTextBoxColumn _stockColumn = null!;
+    private System.Windows.Forms.DataGridViewTextBoxColumn _lowStockColumn = null!;
     private System.Windows.Forms.TableLayoutPanel _actionsLayout = null!;
     private System.Windows.Forms.Label _quantityLabel = null!;
     private System.Windows.Forms.NumericUpDown _quantityInput = null!;
     private System.Windows.Forms.Button _addStockButton = null!;
     private System.Windows.Forms.Button _removeStockButton = null!;
+    private System.Windows.Forms.Button _saveThresholdButton = null!;
     private System.Windows.Forms.Label _statusLabel = null!;
 
     protected override void Dispose(bool disposing)
@@ -39,13 +44,18 @@ partial class InventoryForm
         _titleLayout = new System.Windows.Forms.TableLayoutPanel();
         _titleLabel = new System.Windows.Forms.Label();
         _subtitleLabel = new System.Windows.Forms.Label();
+        _searchLayout = new System.Windows.Forms.TableLayoutPanel();
         _searchBox = new System.Windows.Forms.TextBox();
+        _lowStockLabel = new System.Windows.Forms.Label();
+        _lowStockThreshold = new System.Windows.Forms.NumericUpDown();
+        _saveThresholdButton = new System.Windows.Forms.Button();
         _inventoryGrid = new System.Windows.Forms.DataGridView();
         _barcodeColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
         _productColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
         _categoryColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
         _priceColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
         _stockColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+        _lowStockColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
         _actionsLayout = new System.Windows.Forms.TableLayoutPanel();
         _quantityLabel = new System.Windows.Forms.Label();
         _quantityInput = new System.Windows.Forms.NumericUpDown();
@@ -54,6 +64,8 @@ partial class InventoryForm
         _statusLabel = new System.Windows.Forms.Label();
         _rootLayout.SuspendLayout();
         _titleLayout.SuspendLayout();
+        _searchLayout.SuspendLayout();
+        ((System.ComponentModel.ISupportInitialize)_lowStockThreshold).BeginInit();
         ((System.ComponentModel.ISupportInitialize)_inventoryGrid).BeginInit();
         _actionsLayout.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)_quantityInput).BeginInit();
@@ -65,7 +77,7 @@ partial class InventoryForm
         _rootLayout.ColumnCount = 1;
         _rootLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
         _rootLayout.Controls.Add(_titleLayout, 0, 0);
-        _rootLayout.Controls.Add(_searchBox, 0, 1);
+        _rootLayout.Controls.Add(_searchLayout, 0, 1);
         _rootLayout.Controls.Add(_inventoryGrid, 0, 2);
         _rootLayout.Controls.Add(_actionsLayout, 0, 3);
         _rootLayout.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -96,12 +108,45 @@ partial class InventoryForm
         _subtitleLabel.Text = "Review product details and adjust available stock.";
         _subtitleLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
         //
+        // _searchLayout
+        //
+        _searchLayout.ColumnCount = 4;
+        _searchLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+        _searchLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 135F));
+        _searchLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 85F));
+        _searchLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 125F));
+        _searchLayout.Controls.Add(_searchBox, 0, 0);
+        _searchLayout.Controls.Add(_lowStockLabel, 1, 0);
+        _searchLayout.Controls.Add(_lowStockThreshold, 2, 0);
+        _searchLayout.Controls.Add(_saveThresholdButton, 3, 0);
+        _searchLayout.Dock = System.Windows.Forms.DockStyle.Fill;
+        _searchLayout.RowCount = 1;
+        _searchLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+        //
         // _searchBox
         //
         _searchBox.Dock = System.Windows.Forms.DockStyle.Fill;
         _searchBox.Font = new System.Drawing.Font("Segoe UI", 11F);
-        _searchBox.Margin = new System.Windows.Forms.Padding(0, 4, 0, 8);
+        _searchBox.Margin = new System.Windows.Forms.Padding(0, 4, 10, 8);
         _searchBox.PlaceholderText = "Search product name, barcode, or category...";
+        _lowStockLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        _lowStockLabel.ForeColor = System.Drawing.Color.FromArgb(32, 42, 62);
+        _lowStockLabel.Text = "Selected threshold:";
+        _lowStockLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+        _lowStockLabel.Margin = new System.Windows.Forms.Padding(0, 0, 8, 0);
+        _lowStockThreshold.Dock = System.Windows.Forms.DockStyle.Fill;
+        _lowStockThreshold.Maximum = int.MaxValue;
+        _lowStockThreshold.Minimum = 0;
+        _lowStockThreshold.Value = 5;
+        _lowStockThreshold.Enabled = false;
+        _saveThresholdButton.BackColor = System.Drawing.Color.FromArgb(47, 126, 223);
+        _saveThresholdButton.Dock = System.Windows.Forms.DockStyle.Fill;
+        _saveThresholdButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+        _saveThresholdButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+        _saveThresholdButton.ForeColor = System.Drawing.Color.White;
+        _saveThresholdButton.Margin = new System.Windows.Forms.Padding(8, 0, 0, 0);
+        _saveThresholdButton.Text = "Save Threshold";
+        _saveThresholdButton.Enabled = false;
         //
         // _inventoryGrid
         //
@@ -118,7 +163,8 @@ partial class InventoryForm
             _productColumn,
             _categoryColumn,
             _priceColumn,
-            _stockColumn
+            _stockColumn,
+            _lowStockColumn
         });
         _inventoryGrid.Dock = System.Windows.Forms.DockStyle.Fill;
         _inventoryGrid.MultiSelect = false;
@@ -146,6 +192,10 @@ partial class InventoryForm
         _stockColumn.HeaderText = "In Stock";
         _stockColumn.Name = "stockColumn";
         _stockColumn.ReadOnly = true;
+        _lowStockColumn.FillWeight = 80F;
+        _lowStockColumn.HeaderText = "Low Stock At";
+        _lowStockColumn.Name = "lowStockColumn";
+        _lowStockColumn.ReadOnly = true;
         //
         // _actionsLayout
         //
@@ -207,6 +257,8 @@ partial class InventoryForm
         _actionsLayout.ResumeLayout(false);
         ((System.ComponentModel.ISupportInitialize)_quantityInput).EndInit();
         ((System.ComponentModel.ISupportInitialize)_inventoryGrid).EndInit();
+        ((System.ComponentModel.ISupportInitialize)_lowStockThreshold).EndInit();
+        _searchLayout.ResumeLayout(false);
         _titleLayout.ResumeLayout(false);
         _rootLayout.ResumeLayout(false);
         _rootLayout.PerformLayout();

@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Globalization;
 
 namespace POS;
@@ -25,6 +26,7 @@ internal partial class InventoryForm : Form
         _inventoryGrid.SelectionChanged += (_, _) => UpdateSelectionStatus();
         _addStockButton.Click += (_, _) => AdjustSelectedStock(adding: true);
         _removeStockButton.Click += (_, _) => AdjustSelectedStock(adding: false);
+        _saveThresholdButton.Click += (_, _) => SaveSelectedThreshold();
 
         RefreshInventory();
     }
@@ -42,7 +44,9 @@ internal partial class InventoryForm : Form
                          product.Name.Contains(searchText, StringComparison.CurrentCultureIgnoreCase) ||
                          product.Barcode.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
                          (_categoryNames.TryGetValue(product.CategoryId, out string? categoryName) &&
-                          categoryName.Contains(searchText, StringComparison.CurrentCultureIgnoreCase))))
+                          categoryName.Contains(searchText, StringComparison.CurrentCultureIgnoreCase)))
+                     .OrderBy(product => product.Stock)
+                     .ThenBy(product => product.Name, StringComparer.CurrentCultureIgnoreCase))
             {
                 string category = _categoryNames.TryGetValue(product.CategoryId, out string? name)
                     ? name
@@ -52,8 +56,17 @@ internal partial class InventoryForm : Form
                     product.Name,
                     category,
                     product.Price.ToString("C2", CultureInfo.CurrentCulture),
-                    product.Stock);
+                    product.Stock,
+                    product.LowStockThreshold);
                 DataGridViewRow row = _inventoryGrid.Rows[rowIndex];
+                if (product.Stock <= product.LowStockThreshold)
+                {
+                    row.DefaultCellStyle.BackColor = Color.FromArgb(255, 220, 220);
+                    row.DefaultCellStyle.ForeColor = Color.FromArgb(128, 24, 24);
+                    row.DefaultCellStyle.SelectionBackColor = Color.FromArgb(240, 170, 170);
+                    row.DefaultCellStyle.SelectionForeColor = Color.FromArgb(80, 16, 16);
+                }
+
                 if (product.Barcode.Equals(selectedBarcode, StringComparison.OrdinalIgnoreCase))
                 {
                     row.Selected = true;
@@ -134,6 +147,42 @@ internal partial class InventoryForm : Form
         _statusLabel.Text = $"{(adding ? "Added" : "Removed")} {quantity} unit(s) {direction} {product.Name}.";
     }
 
+    private void SaveSelectedThreshold()
+    {
+        Product? product = GetSelectedProduct();
+        if (product is null)
+        {
+            MessageBox.Show("Select a product first.", "No product selected",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        int threshold = decimal.ToInt32(_lowStockThreshold.Value);
+        try
+        {
+            _store.SetLowStockThreshold(product.Barcode, threshold);
+        }
+        catch (IOException exception)
+        {
+            ShowAdjustmentError(exception);
+            return;
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            ShowAdjustmentError(exception);
+            return;
+        }
+        catch (InvalidDataException exception)
+        {
+            ShowAdjustmentError(exception);
+            return;
+        }
+
+        _products = _store.LoadProducts();
+        RefreshInventory();
+        _statusLabel.Text = $"Low stock threshold for {product.Name} set to {threshold}.";
+    }
+
     private Product? GetSelectedProduct()
     {
         string? barcode = GetSelectedBarcode();
@@ -150,10 +199,15 @@ internal partial class InventoryForm : Form
         Product? product = GetSelectedProduct();
         if (product is null)
         {
+            _lowStockThreshold.Enabled = false;
+            _saveThresholdButton.Enabled = false;
             _statusLabel.Text = "Select a product to adjust stock.";
             return;
         }
 
+        _lowStockThreshold.Value = product.LowStockThreshold;
+        _lowStockThreshold.Enabled = true;
+        _saveThresholdButton.Enabled = true;
         int reserved = _reservedStock.TryGetValue(product.Barcode, out int quantity) ? quantity : 0;
         _statusLabel.Text = reserved > 0
             ? $"{reserved} unit(s) reserved in the current cart."

@@ -39,6 +39,7 @@ partial class Form1
     private System.Windows.Forms.TableLayoutPanel _footerLayout = null!;
     private System.Windows.Forms.Label _instructionLabel = null!;
     private System.Windows.Forms.Button _inventoryButton = null!;
+    private System.Windows.Forms.Button _salesSummaryButton = null!;
     private System.Windows.Forms.Button _clearCartButton = null!;
     private System.Windows.Forms.Timer _clock = null!;
     private System.Windows.Forms.DataGridViewTextBoxColumn _barcodeColumn = null!;
@@ -138,6 +139,7 @@ partial class Form1
         _footerLayout = new System.Windows.Forms.TableLayoutPanel();
         _instructionLabel = new System.Windows.Forms.Label();
         _inventoryButton = new System.Windows.Forms.Button();
+        _salesSummaryButton = new System.Windows.Forms.Button();
         _clearCartButton = new System.Windows.Forms.Button();
         _rootLayout.SuspendLayout();
         _headerPanel.SuspendLayout();
@@ -623,13 +625,15 @@ partial class Form1
         // _footerLayout
         //
         _footerLayout.BackColor = System.Drawing.Color.FromArgb(248, 249, 252);
-        _footerLayout.ColumnCount = 3;
+        _footerLayout.ColumnCount = 4;
         _footerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
         _footerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 140F));
+        _footerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 156F));
         _footerLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 180F));
         _footerLayout.Controls.Add(_instructionLabel, 0, 0);
         _footerLayout.Controls.Add(_inventoryButton, 1, 0);
-        _footerLayout.Controls.Add(_clearCartButton, 2, 0);
+        _footerLayout.Controls.Add(_salesSummaryButton, 2, 0);
+        _footerLayout.Controls.Add(_clearCartButton, 3, 0);
         _footerLayout.Dock = System.Windows.Forms.DockStyle.Fill;
         _footerLayout.Padding = new System.Windows.Forms.Padding(0, 2, 0, 0);
         _footerLayout.RowCount = 1;
@@ -645,6 +649,13 @@ partial class Form1
         _inventoryButton.ForeColor = System.Drawing.Color.White;
         _inventoryButton.Margin = new System.Windows.Forms.Padding(0, 0, 8, 0);
         _inventoryButton.Text = "Inventory";
+        _salesSummaryButton.BackColor = System.Drawing.Color.FromArgb(47, 126, 223);
+        _salesSummaryButton.Dock = System.Windows.Forms.DockStyle.Fill;
+        _salesSummaryButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+        _salesSummaryButton.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
+        _salesSummaryButton.ForeColor = System.Drawing.Color.White;
+        _salesSummaryButton.Margin = new System.Windows.Forms.Padding(0, 0, 8, 0);
+        _salesSummaryButton.Text = "Sales Summary";
         _clearCartButton.BackColor = System.Drawing.Color.FromArgb(224, 75, 58);
         _clearCartButton.Dock = System.Windows.Forms.DockStyle.Fill;
         _clearCartButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;

@@ -37,6 +37,7 @@ public partial class Form1 : Form
         _buttonRemove.Click += (_, _) => RemoveSelectedProduct();
         _clearCartButton.Click += (_, _) => ClearCart();
         _inventoryButton.Click += (_, _) => ManageInventory();
+        _salesSummaryButton.Click += (_, _) => ShowSalesSummary();
         _clock.Tick += (_, _) => UpdateHeader();
         _clock.Start();
 
@@ -55,6 +56,12 @@ public partial class Form1 : Form
         _products = _store.LoadProducts();
         RefreshProducts();
         RefreshCart();
+    }
+
+    private void ShowSalesSummary()
+    {
+        using SalesSummaryForm salesSummaryForm = new(_store);
+        salesSummaryForm.ShowDialog(this);
     }
 
     private void BuildCategories()
@@ -325,7 +332,8 @@ public partial class Form1 : Form
             Price = product.Price,
             Stock = product.Stock - (_cart.TryGetValue(product.Barcode, out int quantity) ? quantity : 0),
             Icon = product.Icon,
-            ImageFile = product.ImageFile
+            ImageFile = product.ImageFile,
+            LowStockThreshold = product.LowStockThreshold
         }).ToList();
 
         List<SaleLine> saleLines = _cart.Select(entry =>
