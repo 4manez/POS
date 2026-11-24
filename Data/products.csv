@@ -4,14 +4,14 @@ barcode,name,category_id,price,stock,icon,image,low_stock_threshold
 2000000000039,Royal Orange 330ml,drinks,18.00,30,🥤,,10
 2000000000046,Nature's Spring 500ml,drinks,12.00,60,💧,,5
 2000000000053,Piattos Cheese 85g,snacks,20.00,24,🍟,,5
-2000000000060,Chippy 108g,snacks,20.00,24,🍟,,5
+2000000000060,Chippy 108g,snacks,20.00,24,🍟,,30
 2000000000077,Nova Multigrain 78g,snacks,20.00,24,🍿,,5
 2000000000084,Oishi Crackers 60g,snacks,20.00,20,🍘,,5
 2000000000091,Lucky Me Pancit Canton,snacks,14.00,40,🍜,,5
 2000000000107,Century Tuna 180g,canned,25.00,19,🥫,,5
-2000000000114,555 Sardines 155g,canned,20.00,12,🥫,,10
+2000000000114,555 Sardines 155g,canned,20.00,13,🥫,,4
 2000000000121,SkyFlakes Crackers,canned,16.00,30,🍘,,5
 2000000000138,Laundry Soap,household,28.00,18,🧼,,5
 2000000000145,Shampoo Sachet,personal-care,8.00,50,🧴,,5
-2000000000152,AA Batteries 4-pack,other,45.00,12,🔋,,5
+2000000000152,AA Batteries 4-pack,other,45.00,12,🔋,,20
 2000000000169,Tissue Pack,other,15.00,4,🧻,,5

@@ -51,7 +51,7 @@ public partial class Form1 : Form
     {
         Dictionary<string, int> reservedStock = new(_cart, StringComparer.OrdinalIgnoreCase);
         using InventoryForm inventoryForm = new(_store, _categories, reservedStock);
-        inventoryForm.ShowDialog(this);
+        ShowChildForm(inventoryForm);
 
         _products = _store.LoadProducts();
         RefreshProducts();
@@ -61,7 +61,21 @@ public partial class Form1 : Form
     private void ShowSalesSummary()
     {
         using SalesSummaryForm salesSummaryForm = new(_store);
-        salesSummaryForm.ShowDialog(this);
+        ShowChildForm(salesSummaryForm);
+    }
+
+    private void ShowChildForm(Form childForm)
+    {
+        double originalOpacity = Opacity;
+        try
+        {
+            Opacity = 0.7;
+            childForm.ShowDialog(this);
+        }
+        finally
+        {
+            Opacity = originalOpacity;
+        }
     }
 
     private void BuildCategories()

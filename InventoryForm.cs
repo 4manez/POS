@@ -45,7 +45,8 @@ internal partial class InventoryForm : Form
                          product.Barcode.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
                          (_categoryNames.TryGetValue(product.CategoryId, out string? categoryName) &&
                           categoryName.Contains(searchText, StringComparison.CurrentCultureIgnoreCase)))
-                     .OrderBy(product => product.Stock)
+                     .OrderBy(product => product.Stock <= product.LowStockThreshold ? 0 : 1)
+                     .ThenBy(product => product.Stock)
                      .ThenBy(product => product.Name, StringComparer.CurrentCultureIgnoreCase))
             {
                 string category = _categoryNames.TryGetValue(product.CategoryId, out string? name)
