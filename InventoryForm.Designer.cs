@@ -25,6 +25,11 @@ partial class InventoryForm
     private System.Windows.Forms.NumericUpDown _quantityInput = null!;
     private System.Windows.Forms.Button _addStockButton = null!;
     private System.Windows.Forms.Button _removeStockButton = null!;
+    private System.Windows.Forms.Button _addProductButton = null!;
+    private System.Windows.Forms.Button _editProductButton = null!;
+    private System.Windows.Forms.Button _deleteProductButton = null!;
+    private System.Windows.Forms.Button _manageCategoriesButton = null!;
+    private System.Windows.Forms.FlowLayoutPanel _productActionsPanel = null!;
     private System.Windows.Forms.Button _saveThresholdButton = null!;
     private System.Windows.Forms.Label _statusLabel = null!;
 
@@ -61,6 +66,11 @@ partial class InventoryForm
         _quantityInput = new System.Windows.Forms.NumericUpDown();
         _addStockButton = new System.Windows.Forms.Button();
         _removeStockButton = new System.Windows.Forms.Button();
+        _addProductButton = new System.Windows.Forms.Button();
+        _editProductButton = new System.Windows.Forms.Button();
+        _deleteProductButton = new System.Windows.Forms.Button();
+        _manageCategoriesButton = new System.Windows.Forms.Button();
+        _productActionsPanel = new System.Windows.Forms.FlowLayoutPanel();
         _statusLabel = new System.Windows.Forms.Label();
         _rootLayout.SuspendLayout();
         _titleLayout.SuspendLayout();
@@ -86,7 +96,7 @@ partial class InventoryForm
         _rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 68F));
         _rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 48F));
         _rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-        _rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 76F));
+        _rootLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 104F));
         //
         // _titleLayout
         //
@@ -210,9 +220,11 @@ partial class InventoryForm
         _actionsLayout.Controls.Add(_addStockButton, 2, 0);
         _actionsLayout.Controls.Add(_removeStockButton, 3, 0);
         _actionsLayout.Controls.Add(_statusLabel, 4, 0);
+        _actionsLayout.Controls.Add(_productActionsPanel, 4, 1);
         _actionsLayout.Dock = System.Windows.Forms.DockStyle.Fill;
         _actionsLayout.Padding = new System.Windows.Forms.Padding(0, 12, 0, 0);
-        _actionsLayout.RowCount = 1;
+        _actionsLayout.RowCount = 2;
+        _actionsLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
         _actionsLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
         _quantityLabel.Dock = System.Windows.Forms.DockStyle.Fill;
         _quantityLabel.ForeColor = System.Drawing.Color.FromArgb(32, 42, 62);
@@ -238,6 +250,42 @@ partial class InventoryForm
         _removeStockButton.ForeColor = System.Drawing.Color.White;
         _removeStockButton.Margin = new System.Windows.Forms.Padding(0, 0, 10, 0);
         _removeStockButton.Text = "Remove Stock";
+        _addProductButton.BackColor = System.Drawing.Color.FromArgb(47, 126, 223);
+        _addProductButton.Dock = System.Windows.Forms.DockStyle.None;
+        _addProductButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+        _addProductButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+        _addProductButton.ForeColor = System.Drawing.Color.White;
+        _addProductButton.Margin = new System.Windows.Forms.Padding(0, 0, 6, 0);
+        _addProductButton.Size = new System.Drawing.Size(120, 28);
+        _addProductButton.Text = "Add New Item";
+        _editProductButton.BackColor = System.Drawing.Color.FromArgb(47, 126, 223);
+        _editProductButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+        _editProductButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+        _editProductButton.ForeColor = System.Drawing.Color.White;
+        _editProductButton.Margin = System.Windows.Forms.Padding.Empty;
+        _editProductButton.Size = new System.Drawing.Size(100, 28);
+        _editProductButton.Text = "Edit Item";
+        _deleteProductButton.BackColor = System.Drawing.Color.FromArgb(224, 75, 58);
+        _deleteProductButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+        _deleteProductButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+        _deleteProductButton.ForeColor = System.Drawing.Color.White;
+        _deleteProductButton.Margin = System.Windows.Forms.Padding.Empty;
+        _deleteProductButton.Size = new System.Drawing.Size(100, 28);
+        _deleteProductButton.Text = "Delete Item";
+        _manageCategoriesButton.BackColor = System.Drawing.Color.FromArgb(110, 120, 136);
+        _manageCategoriesButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+        _manageCategoriesButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+        _manageCategoriesButton.ForeColor = System.Drawing.Color.White;
+        _manageCategoriesButton.Margin = System.Windows.Forms.Padding.Empty;
+        _manageCategoriesButton.Size = new System.Drawing.Size(100, 28);
+        _manageCategoriesButton.Text = "Categories";
+        _productActionsPanel.Controls.Add(_manageCategoriesButton);
+        _productActionsPanel.Controls.Add(_deleteProductButton);
+        _productActionsPanel.Controls.Add(_editProductButton);
+        _productActionsPanel.Controls.Add(_addProductButton);
+        _productActionsPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+        _productActionsPanel.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
+        _productActionsPanel.WrapContents = true;
         _statusLabel.Dock = System.Windows.Forms.DockStyle.Fill;
         _statusLabel.ForeColor = System.Drawing.Color.FromArgb(84, 96, 118);
         _statusLabel.Text = "Select a product to adjust stock.";
@@ -255,6 +303,7 @@ partial class InventoryForm
         StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
         Text = "Inventory | MADIES Store";
         _actionsLayout.ResumeLayout(false);
+        _productActionsPanel.ResumeLayout(false);
         ((System.ComponentModel.ISupportInitialize)_quantityInput).EndInit();
         ((System.ComponentModel.ISupportInitialize)_inventoryGrid).EndInit();
         ((System.ComponentModel.ISupportInitialize)_lowStockThreshold).EndInit();

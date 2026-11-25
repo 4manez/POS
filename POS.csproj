@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Update="application_config" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Data\*.csv" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Data\Sales\*.csv" CopyToOutputDirectory="PreserveNewest" />
     <None Update="res\**\*" CopyToOutputDirectory="PreserveNewest" />

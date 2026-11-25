@@ -53,6 +53,15 @@ public partial class Form1 : Form
         using InventoryForm inventoryForm = new(_store, _categories, reservedStock);
         ShowChildForm(inventoryForm);
 
+        _categories.Clear();
+        _categories.AddRange(_store.LoadCategories());
+        if (_selectedCategoryId is not null &&
+            !_categories.Any(category => category.Id.Equals(_selectedCategoryId, StringComparison.OrdinalIgnoreCase)))
+        {
+            _selectedCategoryId = null;
+        }
+
+        BuildCategories();
         _products = _store.LoadProducts();
         RefreshProducts();
         RefreshCart();
@@ -80,6 +89,11 @@ public partial class Form1 : Form
 
     private void BuildCategories()
     {
+        foreach (Control control in _categoryList.Controls.Cast<Control>().ToArray())
+        {
+            control.Dispose();
+        }
+
         _categoryList.Controls.Clear();
         _categoryList.Controls.Add(CreateCategoryButton("▦", "All Items", null));
         foreach (ProductCategory category in _categories.Take(5))

@@ -12,6 +12,8 @@ partial class SalesSummaryForm
     private System.Windows.Forms.TableLayoutPanel _dateLayout = null!;
     private System.Windows.Forms.Label _dateLabel = null!;
     private System.Windows.Forms.DateTimePicker _datePicker = null!;
+    private System.Windows.Forms.Label _printCountLabel = null!;
+    private System.Windows.Forms.Button _printButton = null!;
     private System.Windows.Forms.TableLayoutPanel _cardsLayout = null!;
     private System.Windows.Forms.Panel _salesCard = null!;
     private System.Windows.Forms.Panel _transactionsCard = null!;
@@ -51,6 +53,8 @@ partial class SalesSummaryForm
         _dateLayout = new System.Windows.Forms.TableLayoutPanel();
         _dateLabel = new System.Windows.Forms.Label();
         _datePicker = new System.Windows.Forms.DateTimePicker();
+        _printCountLabel = new System.Windows.Forms.Label();
+        _printButton = new System.Windows.Forms.Button();
         _cardsLayout = new System.Windows.Forms.TableLayoutPanel();
         _salesCard = new System.Windows.Forms.Panel();
         _transactionsCard = new System.Windows.Forms.Panel();
@@ -122,11 +126,16 @@ partial class SalesSummaryForm
         //
         // _dateLayout
         //
-        _dateLayout.ColumnCount = 2;
+        _dateLayout.ColumnCount = 5;
         _dateLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 92F));
         _dateLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 190F));
+        _dateLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+        _dateLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 145F));
+        _dateLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 120F));
         _dateLayout.Controls.Add(_dateLabel, 0, 0);
         _dateLayout.Controls.Add(_datePicker, 1, 0);
+        _dateLayout.Controls.Add(_printCountLabel, 3, 0);
+        _dateLayout.Controls.Add(_printButton, 4, 0);
         _dateLayout.Dock = System.Windows.Forms.DockStyle.Fill;
         _dateLabel.Dock = System.Windows.Forms.DockStyle.Fill;
         _dateLabel.ForeColor = System.Drawing.Color.FromArgb(32, 42, 62);
@@ -137,6 +146,18 @@ partial class SalesSummaryForm
         _datePicker.CustomFormat = "MMM d, yyyy";
         _datePicker.MaxDate = System.DateTime.Today;
         _datePicker.Value = System.DateTime.Today;
+        _printCountLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        _printCountLabel.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+        _printCountLabel.ForeColor = System.Drawing.Color.FromArgb(32, 42, 62);
+        _printCountLabel.Text = "PRINT COUNT: 0";
+        _printCountLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+        _printButton.BackColor = System.Drawing.Color.FromArgb(47, 126, 223);
+        _printButton.Enabled = false;
+        _printButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+        _printButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+        _printButton.ForeColor = System.Drawing.Color.White;
+        _printButton.Size = new System.Drawing.Size(120, 34);
+        _printButton.Text = "Print Summary";
         //
         // _cardsLayout
         //

@@ -54,13 +54,17 @@ internal sealed class DailySalesSummary
 
 internal sealed class CsvDataStore
 {
-    private const int DefaultLowStockThreshold = 5;
+    internal const int DefaultLowStockThreshold = 5;
     private const string CategoriesHeader = "id,name,icon";
-    private const string ProductsHeader = "barcode,name,category_id,price,stock,icon,image,low_stock_threshold";
+    private const string ProductsHeader = "barcode,name,category_id,price,icon,image,low_stock_threshold";
+    private const string StocksHeader = "barcode,stock";
+    private const string PrintCountsHeader = "date,print_count";
     private const string SalesHeader = "sale_id,sold_at,barcode,product_name,quantity,unit_price,line_total,sale_total,payment_method,cash_received,change";
 
     private readonly string _categoriesPath;
     private readonly string _productsPath;
+    private readonly string _stocksPath;
+    private readonly string _printCountsPath;
     private readonly string _salesDirectory;
 
     public CsvDataStore()
@@ -74,11 +78,15 @@ internal sealed class CsvDataStore
         Directory.CreateDirectory(dataDirectory);
         _categoriesPath = Path.Combine(dataDirectory, "categories.csv");
         _productsPath = Path.Combine(dataDirectory, "products.csv");
+        _stocksPath = Path.Combine(dataDirectory, "stocks.csv");
         _salesDirectory = Path.Combine(dataDirectory, "Sales");
+        _printCountsPath = Path.Combine(_salesDirectory, "sales_summary_print_counts.csv");
 
         EnsureFile(_categoriesPath, CategoriesHeader);
         EnsureFile(_productsPath, ProductsHeader);
+        EnsureFile(_stocksPath, StocksHeader);
         Directory.CreateDirectory(_salesDirectory);
+        EnsureFile(_printCountsPath, PrintCountsHeader);
         EnsureFile(GetSalesPath(DateTime.Now), SalesHeader);
     }
 
@@ -90,20 +98,127 @@ internal sealed class CsvDataStore
             Icon = Get(row, "icon")
         }).ToList();
 
+    public void AddCategory(ProductCategory category)
+    {
+        ProductCategory normalizedCategory = NormalizeCategory(category);
+        List<ProductCategory> categories = LoadCategories();
+        if (categories.Any(existing =>
+                existing.Id.Equals(normalizedCategory.Id, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidDataException($"A category is already registered with ID {normalizedCategory.Id}.");
+        }
+
+        categories.Add(normalizedCategory);
+        SaveCategories(categories);
+    }
+
+    public void UpdateCategory(string id, ProductCategory updatedCategory)
+    {
+        ProductCategory normalizedCategory = NormalizeCategory(updatedCategory);
+        List<ProductCategory> categories = LoadCategories();
+        int categoryIndex = categories.FindIndex(category =>
+            category.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+        if (categoryIndex < 0)
+        {
+            throw new InvalidDataException($"No category is registered with ID {id}.");
+        }
+
+        if (categories.Where((_, index) => index != categoryIndex).Any(category =>
+                category.Id.Equals(normalizedCategory.Id, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidDataException($"A category is already registered with ID {normalizedCategory.Id}.");
+        }
+
+        ProductCategory existingCategory = categories[categoryIndex];
+        categories[categoryIndex] = normalizedCategory;
+        if (existingCategory.Id.Equals(normalizedCategory.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            SaveCategories(categories);
+            return;
+        }
+
+        List<Product> products = LoadProducts().Select(product =>
+            product.CategoryId.Equals(existingCategory.Id, StringComparison.OrdinalIgnoreCase)
+                ? new Product
+                {
+                    Barcode = product.Barcode,
+                    Name = product.Name,
+                    CategoryId = normalizedCategory.Id,
+                    Price = product.Price,
+                    Stock = product.Stock,
+                    Icon = product.Icon,
+                    ImageFile = product.ImageFile,
+                    LowStockThreshold = product.LowStockThreshold
+                }
+                : product).ToList();
+
+        ReplaceFilesTogether(
+            _categoriesPath,
+            SerializeCategories(categories),
+            _productsPath,
+            SerializeProducts(products));
+    }
+
+    public void DeleteCategory(string id)
+    {
+        List<ProductCategory> categories = LoadCategories();
+        int categoryIndex = categories.FindIndex(category =>
+            category.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+        if (categoryIndex < 0)
+        {
+            throw new InvalidDataException($"No category is registered with ID {id}.");
+        }
+
+        ProductCategory category = categories[categoryIndex];
+        if (LoadProducts().Any(product =>
+                product.CategoryId.Equals(category.Id, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException(
+                $"Category {category.Name} is assigned to products. Reassign those products before deleting it.");
+        }
+
+        categories.RemoveAt(categoryIndex);
+        SaveCategories(categories);
+    }
+
     public List<Product> LoadProducts()
     {
-        List<Product> products = ReadRows(_productsPath).Select(row => new Product
+        Dictionary<string, Dictionary<string, string>> stocksByBarcode = new(StringComparer.OrdinalIgnoreCase);
+        foreach (Dictionary<string, string> row in ReadRows(_stocksPath))
         {
-            Barcode = Get(row, "barcode"),
-            Name = Get(row, "name"),
-            CategoryId = Get(row, "category_id"),
-            Price = decimal.Parse(Get(row, "price"), CultureInfo.InvariantCulture),
-            Stock = int.Parse(Get(row, "stock"), CultureInfo.InvariantCulture),
-            Icon = Get(row, "icon"),
-            ImageFile = Get(row, "image"),
-            LowStockThreshold = string.IsNullOrWhiteSpace(Get(row, "low_stock_threshold"))
-                ? DefaultLowStockThreshold
-                : int.Parse(Get(row, "low_stock_threshold"), CultureInfo.InvariantCulture)
+            string barcode = Get(row, "barcode");
+            if (string.IsNullOrWhiteSpace(barcode))
+            {
+                throw new InvalidDataException("Every stock record must have a barcode in stocks.csv.");
+            }
+
+            if (!stocksByBarcode.TryAdd(barcode, row))
+            {
+                throw new InvalidDataException("Each product barcode in stocks.csv must be unique.");
+            }
+        }
+
+        List<Product> products = ReadRows(_productsPath).Select(row =>
+        {
+            string barcode = Get(row, "barcode");
+            if (!stocksByBarcode.TryGetValue(barcode, out Dictionary<string, string>? stock))
+            {
+                throw new InvalidDataException($"No stock record is registered for product barcode {barcode} in stocks.csv.");
+            }
+
+            return new Product
+            {
+                Barcode = barcode,
+                Name = Get(row, "name"),
+                CategoryId = Get(row, "category_id"),
+                Price = decimal.Parse(Get(row, "price"), CultureInfo.InvariantCulture),
+                Stock = int.Parse(Get(stock, "stock"), CultureInfo.InvariantCulture),
+                Icon = Get(row, "icon"),
+                ImageFile = Get(row, "image"),
+                LowStockThreshold = string.IsNullOrWhiteSpace(Get(row, "low_stock_threshold"))
+                    ? DefaultLowStockThreshold
+                    : int.Parse(Get(row, "low_stock_threshold"), CultureInfo.InvariantCulture)
+            };
         }).ToList();
 
         if (products.Any(product => string.IsNullOrWhiteSpace(product.Barcode)))
@@ -116,12 +231,129 @@ internal sealed class CsvDataStore
             throw new InvalidDataException("Each product barcode in products.csv must be unique.");
         }
 
+        if (stocksByBarcode.Keys.Except(products.Select(product => product.Barcode), StringComparer.OrdinalIgnoreCase).Any())
+        {
+            throw new InvalidDataException("Every barcode in stocks.csv must match a product barcode in products.csv.");
+        }
+
         if (products.Any(product => product.LowStockThreshold < 0))
         {
             throw new InvalidDataException("Product low stock thresholds in products.csv cannot be negative.");
         }
 
         return products;
+    }
+
+    public void AddProduct(Product product)
+    {
+        if (string.IsNullOrWhiteSpace(product.Barcode))
+        {
+            throw new InvalidDataException("A product barcode is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(product.Name))
+        {
+            throw new InvalidDataException("A product name is required.");
+        }
+
+        if (product.Price < 0 || product.Stock < 0 || product.LowStockThreshold < 0)
+        {
+            throw new InvalidDataException("Product price, stock, and low stock threshold cannot be negative.");
+        }
+
+        List<Product> products = LoadProducts();
+        if (products.Any(existing =>
+                existing.Barcode.Equals(product.Barcode, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidDataException($"A product is already registered with barcode {product.Barcode}.");
+        }
+
+        if (!LoadCategories().Any(category =>
+                category.Id.Equals(product.CategoryId, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidDataException($"No category is registered with ID {product.CategoryId}.");
+        }
+
+        products.Add(product);
+        ReplaceFilesTogether(
+            _productsPath,
+            SerializeProducts(products),
+            _stocksPath,
+            SerializeStocks(products));
+    }
+
+    public Product UpdateProduct(string barcode, Product updatedProduct)
+    {
+        string updatedBarcode = updatedProduct.Barcode.Trim();
+        string updatedName = updatedProduct.Name.Trim().ToUpperInvariant();
+        if (updatedBarcode.Length == 0 || updatedName.Length == 0)
+        {
+            throw new InvalidDataException("A product barcode and name are required.");
+        }
+
+        if (updatedProduct.Price < 0)
+        {
+            throw new InvalidDataException("Product price cannot be negative.");
+        }
+
+        List<Product> products = LoadProducts();
+        int productIndex = products.FindIndex(product =>
+            product.Barcode.Equals(barcode, StringComparison.OrdinalIgnoreCase));
+        if (productIndex < 0)
+        {
+            throw new InvalidDataException($"No product is registered with barcode {barcode}.");
+        }
+
+        if (products.Where((_, index) => index != productIndex).Any(product =>
+                product.Barcode.Equals(updatedBarcode, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidDataException($"A product is already registered with barcode {updatedBarcode}.");
+        }
+
+        if (!LoadCategories().Any(category =>
+                category.Id.Equals(updatedProduct.CategoryId, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidDataException($"No category is registered with ID {updatedProduct.CategoryId}.");
+        }
+
+        Product existingProduct = products[productIndex];
+        Product savedProduct = new()
+        {
+            Barcode = updatedBarcode,
+            Name = updatedName,
+            CategoryId = updatedProduct.CategoryId,
+            Price = updatedProduct.Price,
+            Stock = existingProduct.Stock,
+            Icon = existingProduct.Icon,
+            ImageFile = existingProduct.ImageFile,
+            LowStockThreshold = existingProduct.LowStockThreshold
+        };
+        products[productIndex] = savedProduct;
+
+        ReplaceFilesTogether(
+            _productsPath,
+            SerializeProducts(products),
+            _stocksPath,
+            SerializeStocks(products));
+        return savedProduct;
+    }
+
+    public void DeleteProduct(string barcode)
+    {
+        List<Product> products = LoadProducts();
+        int productIndex = products.FindIndex(product =>
+            product.Barcode.Equals(barcode, StringComparison.OrdinalIgnoreCase));
+        if (productIndex < 0)
+        {
+            throw new InvalidDataException($"No product is registered with barcode {barcode}.");
+        }
+
+        products.RemoveAt(productIndex);
+        ReplaceFilesTogether(
+            _productsPath,
+            SerializeProducts(products),
+            _stocksPath,
+            SerializeStocks(products));
     }
 
     public void CompleteSale(IReadOnlyCollection<SaleLine> lines, IReadOnlyCollection<Product> updatedProducts)
@@ -154,8 +386,8 @@ internal sealed class CsvDataStore
             line.Change.ToString("0.00", CultureInfo.InvariantCulture))));
 
         ReplaceFilesTogether(
-            _productsPath,
-            SerializeProducts(updatedProducts),
+            _stocksPath,
+            SerializeStocks(updatedProducts),
             salesPath,
             string.Join(Environment.NewLine, salesRows) + Environment.NewLine);
     }
@@ -224,6 +456,29 @@ internal sealed class CsvDataStore
         };
     }
 
+    public int LoadSalesSummaryPrintCount(DateTime date)
+    {
+        string dateKey = date.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        Dictionary<string, int> printCounts = ReadSalesSummaryPrintCounts();
+        return printCounts.TryGetValue(dateKey, out int count) ? count : 0;
+    }
+
+    public int IncrementSalesSummaryPrintCount(DateTime date)
+    {
+        string dateKey = date.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        Dictionary<string, int> printCounts = ReadSalesSummaryPrintCounts();
+        int currentCount = printCounts.TryGetValue(dateKey, out int count) ? count : 0;
+        if (currentCount == int.MaxValue)
+        {
+            throw new InvalidOperationException("The print count has reached its supported limit.");
+        }
+
+        int updatedCount = currentCount + 1;
+        printCounts[dateKey] = updatedCount;
+        SaveSalesSummaryPrintCounts(printCounts);
+        return updatedCount;
+    }
+
     public Product AdjustStock(string barcode, int adjustment)
     {
         if (adjustment == 0)
@@ -265,8 +520,23 @@ internal sealed class CsvDataStore
             }
             : item).ToList();
 
-        SaveProducts(updatedProducts);
+        SaveStocks(updatedProducts);
         return updatedProducts.First(item => item.Barcode.Equals(barcode, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void SaveStocks(IReadOnlyCollection<Product> products)
+    {
+        string contents = SerializeStocks(products);
+        string temporaryPath = _stocksPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            File.WriteAllText(temporaryPath, contents, new UTF8Encoding(false));
+            File.Replace(temporaryPath, _stocksPath, null);
+        }
+        finally
+        {
+            DeleteIfPresent(temporaryPath);
+        }
     }
 
     private void SaveProducts(IReadOnlyCollection<Product> products)
@@ -284,19 +554,115 @@ internal sealed class CsvDataStore
         }
     }
 
+    private void SaveCategories(IReadOnlyCollection<ProductCategory> categories)
+    {
+        string contents = SerializeCategories(categories);
+        string temporaryPath = _categoriesPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            File.WriteAllText(temporaryPath, contents, new UTF8Encoding(false));
+            File.Replace(temporaryPath, _categoriesPath, null);
+        }
+        finally
+        {
+            DeleteIfPresent(temporaryPath);
+        }
+    }
+
+    private Dictionary<string, int> ReadSalesSummaryPrintCounts()
+    {
+        Dictionary<string, int> printCounts = new(StringComparer.Ordinal);
+        foreach (Dictionary<string, string> row in ReadRows(_printCountsPath))
+        {
+            string date = Get(row, "date");
+            if (!DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out DateTime parsedDate))
+            {
+                throw new InvalidDataException("Every print count record must have a valid date in sales_summary_print_counts.csv.");
+            }
+
+            int count = int.Parse(Get(row, "print_count"), CultureInfo.InvariantCulture);
+            if (count < 0)
+            {
+                throw new InvalidDataException("Sales summary print counts cannot be negative.");
+            }
+
+            if (!printCounts.TryAdd(parsedDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), count))
+            {
+                throw new InvalidDataException("Each date in sales_summary_print_counts.csv must be unique.");
+            }
+        }
+
+        return printCounts;
+    }
+
+    private void SaveSalesSummaryPrintCounts(IReadOnlyDictionary<string, int> printCounts)
+    {
+        List<string> rows = [PrintCountsHeader];
+        rows.AddRange(printCounts.OrderBy(entry => entry.Key, StringComparer.Ordinal)
+            .Select(entry => string.Join(",", entry.Key, entry.Value.ToString(CultureInfo.InvariantCulture))));
+        string contents = string.Join(Environment.NewLine, rows) + Environment.NewLine;
+        string temporaryPath = _printCountsPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            File.WriteAllText(temporaryPath, contents, new UTF8Encoding(false));
+            File.Replace(temporaryPath, _printCountsPath, null);
+        }
+        finally
+        {
+            DeleteIfPresent(temporaryPath);
+        }
+    }
+
+    private static string SerializeStocks(IEnumerable<Product> products)
+    {
+        List<string> rows = [StocksHeader];
+        rows.AddRange(products.Select(product => string.Join(",",
+            Escape(product.Barcode),
+            product.Stock.ToString(CultureInfo.InvariantCulture))));
+        return string.Join(Environment.NewLine, rows) + Environment.NewLine;
+    }
+
     private static string SerializeProducts(IEnumerable<Product> products)
     {
         List<string> rows = [ProductsHeader];
         rows.AddRange(products.Select(product => string.Join(",",
             Escape(product.Barcode),
-            Escape(product.Name),
+            Escape(product.Name.Trim().ToUpperInvariant()),
             Escape(product.CategoryId),
             product.Price.ToString("0.00", CultureInfo.InvariantCulture),
-            product.Stock.ToString(CultureInfo.InvariantCulture),
             Escape(product.Icon),
             Escape(product.ImageFile),
             product.LowStockThreshold.ToString(CultureInfo.InvariantCulture))));
         return string.Join(Environment.NewLine, rows) + Environment.NewLine;
+    }
+
+    private static string SerializeCategories(IEnumerable<ProductCategory> categories)
+    {
+        List<string> rows = [CategoriesHeader];
+        rows.AddRange(categories.Select(category => string.Join(",",
+            Escape(category.Id),
+            Escape(category.Name),
+            Escape(category.Icon))));
+        return string.Join(Environment.NewLine, rows) + Environment.NewLine;
+    }
+
+    private static ProductCategory NormalizeCategory(ProductCategory category)
+    {
+        string id = category.Id.Trim();
+        string name = category.Name.Trim();
+        string icon = category.Icon.Trim();
+        if (id.Length == 0 || name.Length == 0 || icon.Length == 0)
+        {
+            throw new InvalidDataException("Category ID, name, and icon are required.");
+        }
+
+        return new ProductCategory
+        {
+            Id = id,
+            Name = name,
+            Icon = icon
+        };
     }
 
     private static void ReplaceFilesTogether(string firstPath, string firstContents, string secondPath, string secondContents)
