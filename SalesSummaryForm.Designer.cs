@@ -297,7 +297,7 @@ partial class SalesSummaryForm
         MinimumSize = new System.Drawing.Size(760, 540);
         Name = "SalesSummaryForm";
         StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-        Text = "Sales Summary | MADIES Store";
+        Text = $"Sales Summary | MADIES Store | version {AppVersion.Display}";
         ((System.ComponentModel.ISupportInitialize)_salesGrid).EndInit();
         _cashCard.ResumeLayout(false);
         _itemsCard.ResumeLayout(false);

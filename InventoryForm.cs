@@ -173,8 +173,11 @@ internal partial class InventoryForm : Form
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)
         {
+            string message = exception is FileNotFoundException
+                ? $"The administrator credentials file was not found at '{configPath}'. Create a plain-text file named application_config beside the application executable with the contents <admincreds>your-password</admincreds>, replacing your-password with your chosen password."
+                : $"Unable to read administrator credentials from '{configPath}'.\n\n{exception.Message}";
             MessageBox.Show(
-                $"Unable to read administrator credentials from '{configPath}'.\n\n{exception.Message}",
+                message,
                 "Administrator credentials unavailable",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);

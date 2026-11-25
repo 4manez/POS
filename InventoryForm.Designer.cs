@@ -301,7 +301,7 @@ partial class InventoryForm
         MinimumSize = new System.Drawing.Size(760, 500);
         Name = "InventoryForm";
         StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-        Text = "Inventory | MADIES Store";
+        Text = $"Inventory | MADIES Store | version {AppVersion.Display}";
         _actionsLayout.ResumeLayout(false);
         _productActionsPanel.ResumeLayout(false);
         ((System.ComponentModel.ISupportInitialize)_quantityInput).EndInit();

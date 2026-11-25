@@ -19,7 +19,7 @@ dotnet run --project POS.csproj
 
 - Search by product name or scan a barcode. Press Enter to add an exact barcode match to the cart.
 - Open **Inventory** to search product details, add or remove stock, add, edit, or delete items and categories, and set a low-stock threshold for the selected item. Product names are saved in uppercase. Editing an item changes its barcode, name, category, or price while preserving its stock and threshold. Stock counts are saved in `Data/stocks.csv` and thresholds in `Data/products.csv`; items at or below their threshold are highlighted red. Blank stock and threshold values for new items default to 0 and 5. Categories cannot be deleted while products are assigned to them.
-- Adding or removing stock, creating or deleting items, and managing categories requires the administrator password in the local `application_config` file, formatted as `<admincreds>your-password</admincreds>`. This file is plain text and is excluded from Git.
+- Adding or removing stock, creating or deleting items, and managing categories requires the administrator password in a plain-text `application_config` file formatted as `<admincreds>your-password</admincreds>`. Replace `your-password` with your chosen password. The file is excluded from Git; create it in the project directory before running locally, or beside the published executable after publishing. Do not distribute the file with the application.
 - Open **Sales Summary** to review and print daily sales totals and product-level units and revenue.
 - Enter the cash received and press Enter to complete a sale.
 

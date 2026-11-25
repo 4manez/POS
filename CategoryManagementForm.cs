@@ -19,7 +19,7 @@ internal sealed class CategoryManagementForm : Form
 
     private void InitializeComponent()
     {
-        Text = "Manage Categories";
+        Text = $"Manage Categories | MADIES Store | version {AppVersion.Display}";
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         ClientSize = new Size(680, 430);

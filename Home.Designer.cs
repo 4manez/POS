@@ -673,7 +673,7 @@ partial class Home
         MinimumSize = new System.Drawing.Size(1000, 650);
         Name = "Home";
         StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-        Text = "Sari-Sari Store | Point of Sale";
+        Text = $"MADIES.IT Systems | Point of Sale | version {AppVersion.Display}";
         _footerLayout.ResumeLayout(false);
         _totalBand.ResumeLayout(false);
         _totalsLayout.ResumeLayout(false);
