@@ -2,7 +2,7 @@
 
 namespace POS;
 
-partial class Form1
+partial class Home
 {
     private System.ComponentModel.IContainer? components = null;
     private System.Windows.Forms.TableLayoutPanel _rootLayout = null!;
@@ -663,7 +663,7 @@ partial class Form1
         _clearCartButton.ForeColor = System.Drawing.Color.White;
         _clearCartButton.Text = "🗑  Clear Cart";
         //
-        // Form1
+        // Home
         //
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
         BackColor = System.Drawing.Color.White;
@@ -671,7 +671,7 @@ partial class Form1
         Controls.Add(_rootLayout);
         Font = new System.Drawing.Font("Segoe UI", 10F);
         MinimumSize = new System.Drawing.Size(1000, 650);
-        Name = "Form1";
+        Name = "Home";
         StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
         Text = "Sari-Sari Store | Point of Sale";
         _footerLayout.ResumeLayout(false);

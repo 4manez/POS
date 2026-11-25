@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace POS;
 
-public partial class Form1 : Form
+public partial class Home : Form
 {
     private static readonly Color Blue = Color.FromArgb(47, 126, 223);
     private static readonly Color PaleBlue = Color.FromArgb(239, 244, 253);
@@ -17,7 +17,7 @@ public partial class Form1 : Form
     private List<Product> _products = [];
     private string? _selectedCategoryId;
 
-    public Form1()
+    public Home()
     {
         InitializeComponent();
         components ??= new System.ComponentModel.Container();
@@ -401,6 +401,7 @@ public partial class Form1 : Form
         RefreshCart();
         MessageBox.Show($"Sale saved.\nTotal: ₱{total:N2}\nChange: ₱{cashReceived - total:N2}",
             "Sale complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        _searchBox.Focus();
     }
 
     private static void ShowSaveError(Exception exception)
@@ -505,6 +506,6 @@ public partial class Form1 : Form
     private void UpdateHeader()
     {
         _clockLabel.Text = DateTime.Now.ToString("MMM d, yyyy   hh:mm tt", CultureInfo.CurrentCulture);
-        _cashierLabel.Text = "Cashier: Juan Dela Cruz";
+        _cashierLabel.Text = "Cashier: UserAccount";
     }
 }
