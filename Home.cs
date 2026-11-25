@@ -13,6 +13,7 @@ public partial class Home : Form
     private readonly CsvDataStore _store = new();
     private readonly Dictionary<string, int> _cart = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<Image> _productImages = [];
+    private readonly HashSet<string> _reportedProductImageErrors = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<ProductCategory> _categories;
     private List<Product> _products = [];
     private string? _selectedCategoryId;
@@ -200,7 +201,7 @@ public partial class Home : Form
                 Button card = new()
                 {
                     Width = cardWidth,
-                    Height = 132,
+                    Height = 164,
                     Margin = new Padding(3),
                     FlatStyle = FlatStyle.Flat,
                     BackColor = Color.White,
@@ -360,7 +361,7 @@ public partial class Home : Form
             Price = product.Price,
             Stock = product.Stock - (_cart.TryGetValue(product.Barcode, out int quantity) ? quantity : 0),
             Icon = product.Icon,
-            ImageFile = product.ImageFile,
+            ImageFileName = product.ImageFileName,
             LowStockThreshold = product.LowStockThreshold
         }).ToList();
 
@@ -478,29 +479,66 @@ public partial class Home : Form
 
     private Image? LoadProductImage(Product product)
     {
-        if (string.IsNullOrWhiteSpace(product.ImageFile))
+        if (string.IsNullOrWhiteSpace(product.ImageFileName))
         {
             return null;
         }
 
-        if (!string.Equals(Path.GetFileName(product.ImageFile), product.ImageFile, StringComparison.Ordinal))
+        string fileName = product.ImageFileName.Trim();
+        if (fileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidDataException(
-                $"The image value for barcode {product.Barcode} must be a filename inside the res folder.");
+            fileName = Path.GetFileNameWithoutExtension(fileName);
         }
 
-        string sourcePath = Path.Combine(Environment.CurrentDirectory, "res", product.ImageFile);
-        string outputPath = Path.Combine(AppContext.BaseDirectory, "res", product.ImageFile);
+        if (fileName.Length == 0 ||
+            !string.Equals(Path.GetFileName(fileName), fileName, StringComparison.Ordinal) ||
+            Path.HasExtension(fileName))
+        {
+            ReportProductImageError(
+                product.ImageFileName,
+                $"The image_filename value for barcode {product.Barcode} must be a PNG filename without a directory path.");
+            return null;
+        }
+
+        string imageFile = fileName + ".png";
+        string sourcePath = Path.Combine(Environment.CurrentDirectory, "res", "items", imageFile);
+        string outputPath = Path.Combine(AppContext.BaseDirectory, "res", "items", imageFile);
         string imagePath = File.Exists(sourcePath) ? sourcePath : outputPath;
         if (!File.Exists(imagePath))
         {
-            throw new FileNotFoundException(
-                $"Image '{product.ImageFile}' for barcode {product.Barcode} was not found in the res folder.",
-                imagePath);
+            ReportProductImageError(
+                imageFile,
+                $"Image '{imageFile}' for barcode {product.Barcode} was not found in res/items.");
+            return null;
         }
 
-        using Image sourceImage = Image.FromFile(imagePath);
-        return new Bitmap(sourceImage, new Size(58, 58));
+        try
+        {
+            using Image sourceImage = Image.FromFile(imagePath);
+            return new Bitmap(sourceImage, new Size(48, 48));
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException or
+            OutOfMemoryException or
+            System.Runtime.InteropServices.ExternalException)
+        {
+            ReportProductImageError(
+                imageFile,
+                $"Image '{imageFile}' for barcode {product.Barcode} could not be decoded as a PNG. {exception.Message}");
+            return null;
+        }
+    }
+
+    private void ReportProductImageError(string imageIdentifier, string message)
+    {
+        if (_reportedProductImageErrors.Add(imageIdentifier))
+        {
+            MessageBox.Show(
+                $"{message}\n\nThe product will display its icon instead.",
+                "Product image unavailable",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
     }
 
     private void UpdateHeader()

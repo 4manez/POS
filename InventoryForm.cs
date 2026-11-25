@@ -579,7 +579,7 @@ internal partial class InventoryForm : Form
                 Price = priceInput.Value,
                 Stock = stock,
                 Icon = existingProduct?.Icon ?? category.Icon,
-                ImageFile = existingProduct?.ImageFile ?? string.Empty,
+                ImageFileName = existingProduct?.ImageFileName ?? string.Empty,
                 LowStockThreshold = threshold
             };
 

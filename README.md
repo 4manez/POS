@@ -26,7 +26,7 @@ dotnet run --project POS.csproj
 ## CSV data
 
 - `Data/categories.csv` contains category IDs, names, and icons.
-- `Data/products.csv` contains product barcodes, names, category IDs, prices, icons, optional image filenames, and low-stock thresholds.
+- `Data/products.csv` contains product barcodes, names, category IDs, prices, icons, optional `image_filename` values, and low-stock thresholds. Image values resolve to `res/items/<filename>.png`.
 - `Data/stocks.csv` contains each product's barcode and stock count. The barcode connects each stock record to its product.
 - Sales are stored by date in `Data/Sales/sales_YYYYMMDD.csv`. Each row records a sold product line; the file is created when needed.
 - `Data/Sales/sales_summary_print_counts.csv` stores the persistent print count for each sales-summary date.

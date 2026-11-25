@@ -18,7 +18,7 @@ internal sealed class Product
     public required decimal Price { get; init; }
     public required int Stock { get; set; }
     public required string Icon { get; init; }
-    public required string ImageFile { get; init; }
+    public required string ImageFileName { get; init; }
     public required int LowStockThreshold { get; set; }
 }
 
@@ -56,7 +56,7 @@ internal sealed class CsvDataStore
 {
     internal const int DefaultLowStockThreshold = 5;
     private const string CategoriesHeader = "id,name,icon";
-    private const string ProductsHeader = "barcode,name,category_id,price,icon,image,low_stock_threshold";
+    private const string ProductsHeader = "barcode,name,category_id,price,icon,image_filename,low_stock_threshold";
     private const string StocksHeader = "barcode,stock";
     private const string PrintCountsHeader = "date,print_count";
     private const string SalesHeader = "sale_id,sold_at,barcode,product_name,quantity,unit_price,line_total,sale_total,payment_method,cash_received,change";
@@ -147,7 +147,7 @@ internal sealed class CsvDataStore
                     Price = product.Price,
                     Stock = product.Stock,
                     Icon = product.Icon,
-                    ImageFile = product.ImageFile,
+                    ImageFileName = product.ImageFileName,
                     LowStockThreshold = product.LowStockThreshold
                 }
                 : product).ToList();
@@ -214,7 +214,7 @@ internal sealed class CsvDataStore
                 Price = decimal.Parse(Get(row, "price"), CultureInfo.InvariantCulture),
                 Stock = int.Parse(Get(stock, "stock"), CultureInfo.InvariantCulture),
                 Icon = Get(row, "icon"),
-                ImageFile = Get(row, "image"),
+                ImageFileName = Get(row, "image_filename"),
                 LowStockThreshold = string.IsNullOrWhiteSpace(Get(row, "low_stock_threshold"))
                     ? DefaultLowStockThreshold
                     : int.Parse(Get(row, "low_stock_threshold"), CultureInfo.InvariantCulture)
@@ -325,7 +325,7 @@ internal sealed class CsvDataStore
             Price = updatedProduct.Price,
             Stock = existingProduct.Stock,
             Icon = existingProduct.Icon,
-            ImageFile = existingProduct.ImageFile,
+            ImageFileName = existingProduct.ImageFileName,
             LowStockThreshold = existingProduct.LowStockThreshold
         };
         products[productIndex] = savedProduct;
@@ -515,7 +515,7 @@ internal sealed class CsvDataStore
                 Price = item.Price,
                 Stock = updatedStock,
                 Icon = item.Icon,
-                ImageFile = item.ImageFile,
+                ImageFileName = item.ImageFileName,
                 LowStockThreshold = item.LowStockThreshold
             }
             : item).ToList();
@@ -632,7 +632,7 @@ internal sealed class CsvDataStore
             Escape(product.CategoryId),
             product.Price.ToString("0.00", CultureInfo.InvariantCulture),
             Escape(product.Icon),
-            Escape(product.ImageFile),
+            Escape(product.ImageFileName),
             product.LowStockThreshold.ToString(CultureInfo.InvariantCulture))));
         return string.Join(Environment.NewLine, rows) + Environment.NewLine;
     }
