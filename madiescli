@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    printf 'Usage: bash madiescli publish release <major|minor|patch>\n' >&2
+}
+
+if [[ $# -ne 3 || $1 != "publish" || $2 != "release" ]]; then
+    usage
+    exit 2
+fi
+
+release_level=$3
+case "$release_level" in
+    major|minor|patch) ;;
+    *)
+        usage
+        exit 2
+        ;;
+esac
+
+project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+project_file="$project_dir/POS.csproj"
+
+if [[ ! -f "$project_file" ]]; then
+    printf 'Project file not found: %s\n' "$project_file" >&2
+    exit 1
+fi
+
+version_count=$(grep -Ec '^[[:space:]]*<Version>[0-9]+\.[0-9]+(\.[0-9]+)?</Version>[[:space:]]*$' "$project_file" || true)
+if [[ $version_count -ne 1 ]]; then
+    printf 'Expected exactly one numeric <Version> in %s\n' "$project_file" >&2
+    exit 1
+fi
+
+version=$(sed -nE 's/^[[:space:]]*<Version>([0-9]+\.[0-9]+(\.[0-9]+)?)<\/Version>[[:space:]]*$/\1/p' "$project_file")
+if [[ ! $version =~ ^([0-9]+)\.([0-9]+)(\.([0-9]+))?$ ]]; then
+    printf 'Unsupported project version: %s\n' "$version" >&2
+    exit 1
+fi
+
+major=$((10#${BASH_REMATCH[1]}))
+minor=$((10#${BASH_REMATCH[2]}))
+patch=${BASH_REMATCH[4]:-0}
+patch=$((10#$patch))
+
+case "$release_level" in
+    major)
+        major=$((major + 1))
+        minor=0
+        patch=0
+        ;;
+    minor)
+        minor=$((minor + 1))
+        patch=0
+        ;;
+    patch)
+        patch=$((patch + 1))
+        ;;
+esac
+
+next_version="$major.$minor.$patch"
+assembly_version_count=$(grep -Ec '^[[:space:]]*<AssemblyVersion>[0-9]+(\.[0-9]+){3}</AssemblyVersion>[[:space:]]*$' "$project_file" || true)
+file_version_count=$(grep -Ec '^[[:space:]]*<FileVersion>[0-9]+(\.[0-9]+){3}</FileVersion>[[:space:]]*$' "$project_file" || true)
+if [[ $assembly_version_count -ne 1 || $file_version_count -ne 1 ]]; then
+    printf 'Expected exactly one numeric <AssemblyVersion> and <FileVersion> in %s\n' "$project_file" >&2
+    exit 1
+fi
+
+tmp_file=$(mktemp "${project_file}.tmp.XXXXXX")
+trap 'rm -f "$tmp_file"' EXIT
+sed -E \
+    -e "s#(<Version>)[0-9]+(\.[0-9]+){1,2}(</Version>)#\1$next_version\3#" \
+    -e "s#(<AssemblyVersion>)[0-9]+(\.[0-9]+){3}(</AssemblyVersion>)#\1$next_version.0\3#" \
+    -e "s#(<FileVersion>)[0-9]+(\.[0-9]+){3}(</FileVersion>)#\1$next_version.0\3#" \
+    "$project_file" > "$tmp_file"
+mv "$tmp_file" "$project_file"
+
+printf 'Publishing version %s...\n' "$next_version"
+cd "$project_dir"
+if dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true; then
+    printf 'Published version %s.\n' "$next_version"
+else
+    status=$?
+    printf 'Publish failed; project version remains %s.\n' "$next_version" >&2
+    exit "$status"
+fi

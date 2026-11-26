@@ -6,6 +6,7 @@ namespace POS;
 internal partial class InventoryForm : Form
 {
     private readonly CsvDataStore _store;
+    private readonly ApplicationConfig _configuration;
     private IReadOnlyDictionary<string, string> _categoryNames;
     private readonly IReadOnlyDictionary<string, int> _reservedStock;
     private List<Product> _products;
@@ -14,10 +15,12 @@ internal partial class InventoryForm : Form
     internal InventoryForm(
         CsvDataStore store,
         IReadOnlyCollection<ProductCategory> categories,
-        IReadOnlyDictionary<string, int> reservedStock)
+        IReadOnlyDictionary<string, int> reservedStock,
+        ApplicationConfig configuration)
     {
         InitializeComponent();
         _store = store;
+        _configuration = configuration;
         _categoryNames = categories.ToDictionary(category => category.Id, category => category.Name,
             StringComparer.OrdinalIgnoreCase);
         _reservedStock = reservedStock;
@@ -165,25 +168,6 @@ internal partial class InventoryForm : Form
             return true;
         }
 
-        string configPath = GetAdminConfigPath();
-        string expectedPassword;
-        try
-        {
-            expectedPassword = ReadAdminPassword(configPath);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)
-        {
-            string message = exception is FileNotFoundException
-                ? $"The administrator credentials file was not found at '{configPath}'. Create a plain-text file named application_config beside the application executable with the contents <admincreds>your-password</admincreds>, replacing your-password with your chosen password."
-                : $"Unable to read administrator credentials from '{configPath}'.\n\n{exception.Message}";
-            MessageBox.Show(
-                message,
-                "Administrator credentials unavailable",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
-            return false;
-        }
-
         using Form dialog = new()
         {
             Text = "Administrator Authentication",
@@ -232,7 +216,7 @@ internal partial class InventoryForm : Form
             return false;
         }
 
-        if (!string.Equals(passwordInput.Text, expectedPassword, StringComparison.Ordinal))
+        if (!string.Equals(passwordInput.Text, _configuration.AdminPassword, StringComparison.Ordinal))
         {
             MessageBox.Show("The administrator password is incorrect.",
                 "Authentication failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -254,29 +238,6 @@ internal partial class InventoryForm : Form
         _lowStockLabel.ForeColor = Color.White;
         _quantityLabel.ForeColor = Color.White;
         _statusLabel.ForeColor = Color.FromArgb(220, 238, 226);
-    }
-
-    private static string GetAdminConfigPath()
-    {
-        string currentDirectoryPath = Path.Combine(Environment.CurrentDirectory, "application_config");
-        return File.Exists(currentDirectoryPath)
-            ? currentDirectoryPath
-            : Path.Combine(AppContext.BaseDirectory, "application_config");
-    }
-
-    private static string ReadAdminPassword(string configPath)
-    {
-        const string openingTag = "<admincreds>";
-        const string closingTag = "</admincreds>";
-        string contents = File.ReadAllText(configPath).Trim();
-        if (!contents.StartsWith(openingTag, StringComparison.Ordinal) ||
-            !contents.EndsWith(closingTag, StringComparison.Ordinal) ||
-            contents.Length <= openingTag.Length + closingTag.Length)
-        {
-            throw new InvalidDataException("The file must contain a password enclosed by <admincreds> and </admincreds>.");
-        }
-
-        return contents.Substring(openingTag.Length, contents.Length - openingTag.Length - closingTag.Length);
     }
 
     private void SaveSelectedThreshold()
@@ -581,7 +542,6 @@ internal partial class InventoryForm : Form
                 CategoryId = category.Id,
                 Price = priceInput.Value,
                 Stock = stock,
-                Icon = existingProduct?.Icon ?? category.Icon,
                 ImageFileName = existingProduct?.ImageFileName ?? string.Empty,
                 LowStockThreshold = threshold
             };

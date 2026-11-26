@@ -11,6 +11,8 @@ public partial class Home : Form
     private static readonly Color Ink = Color.FromArgb(32, 42, 62);
 
     private readonly CsvDataStore _store = new();
+    private readonly ApplicationConfig _configuration;
+    private string _cashierName;
     private readonly Dictionary<string, int> _cart = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<Image> _productImages = [];
     private readonly HashSet<string> _reportedProductImageErrors = new(StringComparer.OrdinalIgnoreCase);
@@ -18,10 +20,15 @@ public partial class Home : Form
     private List<Product> _products = [];
     private string? _selectedCategoryId;
 
-    public Home()
+    internal Home(ApplicationConfig configuration, string cashierName)
     {
         InitializeComponent();
+        _configuration = configuration;
+        _cashierName = cashierName;
         components ??= new System.ComponentModel.Container();
+        _brandLabel.Text = string.IsNullOrWhiteSpace(configuration.StoreName)
+            ? "MADIES Store"
+            : configuration.StoreName;
         _logoPictureBox.ImageLocation = Path.Combine(AppContext.BaseDirectory, "res", "madies_it_logo.png");
         _logoPictureBox.Load();
 
@@ -39,6 +46,10 @@ public partial class Home : Form
         _clearCartButton.Click += (_, _) => ClearCart();
         _inventoryButton.Click += (_, _) => ManageInventory();
         _salesSummaryButton.Click += (_, _) => ShowSalesSummary();
+        _cashierLabel.AutoEllipsis = true;
+        _cashierLabel.AccessibleDescription = "Click to log out and switch cashier";
+        _cashierLabel.Cursor = Cursors.Hand;
+        _cashierLabel.Click += (_, _) => LogOutCashier();
         _clock.Tick += (_, _) => UpdateHeader();
         _clock.Start();
 
@@ -51,7 +62,7 @@ public partial class Home : Form
     private void ManageInventory()
     {
         Dictionary<string, int> reservedStock = new(_cart, StringComparer.OrdinalIgnoreCase);
-        using InventoryForm inventoryForm = new(_store, _categories, reservedStock);
+        using InventoryForm inventoryForm = new(_store, _categories, reservedStock, _configuration);
         ShowChildForm(inventoryForm);
 
         _categories.Clear();
@@ -72,6 +83,18 @@ public partial class Home : Form
     {
         using SalesSummaryForm salesSummaryForm = new(_store);
         ShowChildForm(salesSummaryForm);
+    }
+
+    private void LogOutCashier()
+    {
+        string? cashierName = CashierDialog.Prompt(this);
+        if (cashierName is null)
+        {
+            return;
+        }
+
+        _cashierName = cashierName;
+        UpdateHeader();
     }
 
     private void ShowChildForm(Form childForm)
@@ -207,8 +230,7 @@ public partial class Home : Form
                     BackColor = Color.White,
                     ForeColor = Ink,
                     Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
-                    Text = (productImage is null ? product.Icon + Environment.NewLine : string.Empty) +
-                           product.Name + Environment.NewLine + $"₱{product.Price:N2}" +
+                    Text = product.Name + Environment.NewLine + $"₱{product.Price:N2}" +
                            Environment.NewLine + $"Stock: {product.Stock}",
                     TextAlign = ContentAlignment.MiddleCenter,
                     Tag = product.Barcode,
@@ -360,7 +382,6 @@ public partial class Home : Form
             CategoryId = product.CategoryId,
             Price = product.Price,
             Stock = product.Stock - (_cart.TryGetValue(product.Barcode, out int quantity) ? quantity : 0),
-            Icon = product.Icon,
             ImageFileName = product.ImageFileName,
             LowStockThreshold = product.LowStockThreshold
         }).ToList();
@@ -376,7 +397,8 @@ public partial class Home : Form
                 Quantity = entry.Value,
                 SaleTotal = total,
                 CashReceived = cashReceived,
-                Change = cashReceived - total
+                Change = cashReceived - total,
+                Cashier = _cashierName
             };
         }).ToList();
 
@@ -479,12 +501,9 @@ public partial class Home : Form
 
     private Image? LoadProductImage(Product product)
     {
-        if (string.IsNullOrWhiteSpace(product.ImageFileName))
-        {
-            return null;
-        }
-
-        string fileName = product.ImageFileName.Trim();
+        string fileName = string.IsNullOrWhiteSpace(product.ImageFileName)
+            ? "missing"
+            : product.ImageFileName.Trim();
         if (fileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
         {
             fileName = Path.GetFileNameWithoutExtension(fileName);
@@ -497,18 +516,30 @@ public partial class Home : Form
             ReportProductImageError(
                 product.ImageFileName,
                 $"The image_filename value for barcode {product.Barcode} must be a PNG filename without a directory path.");
-            return null;
+            return LoadProductImageFile("missing.png", product);
         }
 
-        string imageFile = fileName + ".png";
+        return LoadProductImageFile(fileName + ".png", product);
+    }
+
+    private Image? LoadProductImageFile(string imageFile, Product product)
+    {
         string sourcePath = Path.Combine(Environment.CurrentDirectory, "res", "items", imageFile);
         string outputPath = Path.Combine(AppContext.BaseDirectory, "res", "items", imageFile);
         string imagePath = File.Exists(sourcePath) ? sourcePath : outputPath;
         if (!File.Exists(imagePath))
         {
+            if (!imageFile.Equals("missing.png", StringComparison.OrdinalIgnoreCase))
+            {
+                ReportProductImageError(
+                    imageFile,
+                    $"Image '{imageFile}' for barcode {product.Barcode} was not found in res/items.");
+                return LoadProductImageFile("missing.png", product);
+            }
+
             ReportProductImageError(
                 imageFile,
-                $"Image '{imageFile}' for barcode {product.Barcode} was not found in res/items.");
+                "The fallback image 'missing.png' was not found in res/items.");
             return null;
         }
 
@@ -522,9 +553,17 @@ public partial class Home : Form
             OutOfMemoryException or
             System.Runtime.InteropServices.ExternalException)
         {
+            if (!imageFile.Equals("missing.png", StringComparison.OrdinalIgnoreCase))
+            {
+                ReportProductImageError(
+                    imageFile,
+                    $"Image '{imageFile}' for barcode {product.Barcode} could not be decoded as a PNG. {exception.Message}");
+                return LoadProductImageFile("missing.png", product);
+            }
+
             ReportProductImageError(
                 imageFile,
-                $"Image '{imageFile}' for barcode {product.Barcode} could not be decoded as a PNG. {exception.Message}");
+                $"The fallback image could not be decoded as a PNG. {exception.Message}");
             return null;
         }
     }
@@ -534,7 +573,7 @@ public partial class Home : Form
         if (_reportedProductImageErrors.Add(imageIdentifier))
         {
             MessageBox.Show(
-                $"{message}\n\nThe product will display its icon instead.",
+                $"{message}\n\nThe product will use the fallback image if available.",
                 "Product image unavailable",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
@@ -544,6 +583,9 @@ public partial class Home : Form
     private void UpdateHeader()
     {
         _clockLabel.Text = DateTime.Now.ToString("MMM d, yyyy   hh:mm tt", CultureInfo.CurrentCulture);
-        _cashierLabel.Text = "Cashier: UserAccount";
+        string branch = string.IsNullOrWhiteSpace(_configuration.Branch)
+            ? string.Empty
+            : $" | Branch: {_configuration.Branch}";
+        _cashierLabel.Text = $"Cashier: {_cashierName}  |  Logout{branch}";
     }
 }

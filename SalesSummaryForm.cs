@@ -40,6 +40,7 @@ internal partial class SalesSummaryForm : Form
                 _salesGrid.Rows.Add(
                     product.Barcode,
                     product.ProductName,
+                    string.IsNullOrWhiteSpace(product.Cashier) ? "—" : product.Cashier,
                     product.QuantitySold,
                     product.Revenue.ToString("C2", CultureInfo.CurrentCulture));
             }
@@ -216,18 +217,21 @@ internal partial class SalesSummaryForm : Form
 
         float rowHeight = bodyFont.GetHeight(pageGraphics) + 10;
         float barcodeWidth = width * 0.22F;
-        float productWidth = width * 0.42F;
-        float quantityWidth = width * 0.16F;
-        float revenueWidth = width - barcodeWidth - productWidth - quantityWidth;
+        float productWidth = width * 0.30F;
+        float cashierWidth = width * 0.20F;
+        float quantityWidth = width * 0.14F;
+        float revenueWidth = width - barcodeWidth - productWidth - cashierWidth - quantityWidth;
         pageGraphics.FillRectangle(headerBrush, left, y, width, rowHeight);
         pageGraphics.DrawString("Barcode", columnFont, textBrush,
             new RectangleF(left + 4, y, barcodeWidth - 8, rowHeight), leftFormat);
         pageGraphics.DrawString("Product", columnFont, textBrush,
             new RectangleF(left + barcodeWidth + 4, y, productWidth - 8, rowHeight), leftFormat);
+        pageGraphics.DrawString("Cashier", columnFont, textBrush,
+            new RectangleF(left + barcodeWidth + productWidth + 4, y, cashierWidth - 8, rowHeight), leftFormat);
         pageGraphics.DrawString("Units Sold", columnFont, textBrush,
-            new RectangleF(left + barcodeWidth + productWidth + 4, y, quantityWidth - 8, rowHeight), rightFormat);
+            new RectangleF(left + barcodeWidth + productWidth + cashierWidth + 4, y, quantityWidth - 8, rowHeight), rightFormat);
         pageGraphics.DrawString("Revenue", columnFont, textBrush,
-            new RectangleF(left + barcodeWidth + productWidth + quantityWidth + 4, y, revenueWidth - 8, rowHeight), rightFormat);
+            new RectangleF(left + barcodeWidth + productWidth + cashierWidth + quantityWidth + 4, y, revenueWidth - 8, rowHeight), rightFormat);
         y += rowHeight;
 
         if (summary.Products.Count == 0)
@@ -246,10 +250,12 @@ internal partial class SalesSummaryForm : Form
                 new RectangleF(left + 4, y, barcodeWidth - 8, rowHeight), leftFormat);
             pageGraphics.DrawString(product.ProductName, bodyFont, textBrush,
                 new RectangleF(left + barcodeWidth + 4, y, productWidth - 8, rowHeight), leftFormat);
+            pageGraphics.DrawString(string.IsNullOrWhiteSpace(product.Cashier) ? "—" : product.Cashier, bodyFont, textBrush,
+                new RectangleF(left + barcodeWidth + productWidth + 4, y, cashierWidth - 8, rowHeight), leftFormat);
             pageGraphics.DrawString(product.QuantitySold.ToString("N0", CultureInfo.CurrentCulture), bodyFont, textBrush,
-                new RectangleF(left + barcodeWidth + productWidth + 4, y, quantityWidth - 8, rowHeight), rightFormat);
+                new RectangleF(left + barcodeWidth + productWidth + cashierWidth + 4, y, quantityWidth - 8, rowHeight), rightFormat);
             pageGraphics.DrawString(product.Revenue.ToString("C2", CultureInfo.CurrentCulture), bodyFont, textBrush,
-                new RectangleF(left + barcodeWidth + productWidth + quantityWidth + 4, y, revenueWidth - 8, rowHeight), rightFormat);
+                new RectangleF(left + barcodeWidth + productWidth + cashierWidth + quantityWidth + 4, y, revenueWidth - 8, rowHeight), rightFormat);
             y += rowHeight;
             pageGraphics.DrawLine(linePen, left, y, left + width, y);
             productIndex++;

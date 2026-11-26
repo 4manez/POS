@@ -17,7 +17,6 @@ internal sealed class Product
     public required string CategoryId { get; init; }
     public required decimal Price { get; init; }
     public required int Stock { get; set; }
-    public required string Icon { get; init; }
     public required string ImageFileName { get; init; }
     public required int LowStockThreshold { get; set; }
 }
@@ -31,12 +30,14 @@ internal sealed class SaleLine
     public required decimal SaleTotal { get; init; }
     public required decimal CashReceived { get; init; }
     public required decimal Change { get; init; }
+    public required string Cashier { get; init; }
 }
 
 internal sealed class ProductSalesSummary
 {
     public required string Barcode { get; init; }
     public required string ProductName { get; init; }
+    public required string Cashier { get; init; }
     public required long QuantitySold { get; init; }
     public required decimal Revenue { get; init; }
 }
@@ -56,10 +57,10 @@ internal sealed class CsvDataStore
 {
     internal const int DefaultLowStockThreshold = 5;
     private const string CategoriesHeader = "id,name,icon";
-    private const string ProductsHeader = "barcode,name,category_id,price,icon,image_filename,low_stock_threshold";
+    private const string ProductsHeader = "barcode,name,category_id,price,image_filename,low_stock_threshold";
     private const string StocksHeader = "barcode,stock";
     private const string PrintCountsHeader = "date,print_count";
-    private const string SalesHeader = "sale_id,sold_at,barcode,product_name,quantity,unit_price,line_total,sale_total,payment_method,cash_received,change";
+    private const string SalesHeader = "sale_id,sold_at,barcode,product_name,quantity,unit_price,line_total,sale_total,payment_method,cash_received,change,cashier";
 
     private readonly string _categoriesPath;
     private readonly string _productsPath;
@@ -146,7 +147,6 @@ internal sealed class CsvDataStore
                     CategoryId = normalizedCategory.Id,
                     Price = product.Price,
                     Stock = product.Stock,
-                    Icon = product.Icon,
                     ImageFileName = product.ImageFileName,
                     LowStockThreshold = product.LowStockThreshold
                 }
@@ -213,7 +213,6 @@ internal sealed class CsvDataStore
                 CategoryId = Get(row, "category_id"),
                 Price = decimal.Parse(Get(row, "price"), CultureInfo.InvariantCulture),
                 Stock = int.Parse(Get(stock, "stock"), CultureInfo.InvariantCulture),
-                Icon = Get(row, "icon"),
                 ImageFileName = Get(row, "image_filename"),
                 LowStockThreshold = string.IsNullOrWhiteSpace(Get(row, "low_stock_threshold"))
                     ? DefaultLowStockThreshold
@@ -324,7 +323,6 @@ internal sealed class CsvDataStore
             CategoryId = updatedProduct.CategoryId,
             Price = updatedProduct.Price,
             Stock = existingProduct.Stock,
-            Icon = existingProduct.Icon,
             ImageFileName = existingProduct.ImageFileName,
             LowStockThreshold = existingProduct.LowStockThreshold
         };
@@ -371,6 +369,17 @@ internal sealed class CsvDataStore
         {
             salesRows.Add(SalesHeader);
         }
+        else if (!ParseLine(salesRows[0]).Contains("cashier", StringComparer.OrdinalIgnoreCase))
+        {
+            salesRows[0] += ",cashier";
+            for (int i = 1; i < salesRows.Count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(salesRows[i]))
+                {
+                    salesRows[i] += ",";
+                }
+            }
+        }
 
         salesRows.AddRange(lines.Select(line => string.Join(",",
             Escape(line.SaleId),
@@ -383,7 +392,8 @@ internal sealed class CsvDataStore
             line.SaleTotal.ToString("0.00", CultureInfo.InvariantCulture),
             "Cash",
             line.CashReceived.ToString("0.00", CultureInfo.InvariantCulture),
-            line.Change.ToString("0.00", CultureInfo.InvariantCulture))));
+            line.Change.ToString("0.00", CultureInfo.InvariantCulture),
+            Escape(line.Cashier))));
 
         ReplaceFilesTogether(
             _stocksPath,
@@ -430,13 +440,16 @@ internal sealed class CsvDataStore
             .ToArray();
         List<ProductSalesSummary> products = records
             .GroupBy(row => Get(row, "barcode"), StringComparer.OrdinalIgnoreCase)
-            .Select(group => new ProductSalesSummary
-            {
-                Barcode = group.Key,
-                ProductName = Get(group.First(), "product_name"),
-                QuantitySold = group.Sum(row => long.Parse(Get(row, "quantity"), CultureInfo.InvariantCulture)),
-                Revenue = group.Sum(row => decimal.Parse(Get(row, "line_total"), CultureInfo.InvariantCulture))
-            })
+            .SelectMany(barcodeGroup => barcodeGroup
+                .GroupBy(row => Get(row, "cashier"), StringComparer.OrdinalIgnoreCase)
+                .Select(group => new ProductSalesSummary
+                {
+                    Barcode = barcodeGroup.Key,
+                    ProductName = Get(group.First(), "product_name"),
+                    Cashier = group.Key,
+                    QuantitySold = group.Sum(row => long.Parse(Get(row, "quantity"), CultureInfo.InvariantCulture)),
+                    Revenue = group.Sum(row => decimal.Parse(Get(row, "line_total"), CultureInfo.InvariantCulture))
+                }))
             .OrderByDescending(product => product.Revenue)
             .ThenBy(product => product.ProductName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
@@ -514,7 +527,6 @@ internal sealed class CsvDataStore
                 CategoryId = item.CategoryId,
                 Price = item.Price,
                 Stock = updatedStock,
-                Icon = item.Icon,
                 ImageFileName = item.ImageFileName,
                 LowStockThreshold = item.LowStockThreshold
             }
@@ -631,7 +643,6 @@ internal sealed class CsvDataStore
             Escape(product.Name.Trim().ToUpperInvariant()),
             Escape(product.CategoryId),
             product.Price.ToString("0.00", CultureInfo.InvariantCulture),
-            Escape(product.Icon),
             Escape(product.ImageFileName),
             product.LowStockThreshold.ToString(CultureInfo.InvariantCulture))));
         return string.Join(Environment.NewLine, rows) + Environment.NewLine;

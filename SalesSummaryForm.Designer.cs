@@ -30,6 +30,7 @@ partial class SalesSummaryForm
     private System.Windows.Forms.DataGridView _salesGrid = null!;
     private System.Windows.Forms.DataGridViewTextBoxColumn _barcodeColumn = null!;
     private System.Windows.Forms.DataGridViewTextBoxColumn _productColumn = null!;
+    private System.Windows.Forms.DataGridViewTextBoxColumn _cashierColumn = null!;
     private System.Windows.Forms.DataGridViewTextBoxColumn _quantityColumn = null!;
     private System.Windows.Forms.DataGridViewTextBoxColumn _revenueColumn = null!;
     private System.Windows.Forms.Label _statusLabel = null!;
@@ -71,6 +72,7 @@ partial class SalesSummaryForm
         _salesGrid = new System.Windows.Forms.DataGridView();
         _barcodeColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
         _productColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+        _cashierColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
         _quantityColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
         _revenueColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
         _statusLabel = new System.Windows.Forms.Label();
@@ -254,6 +256,7 @@ partial class SalesSummaryForm
         {
             _barcodeColumn,
             _productColumn,
+            _cashierColumn,
             _quantityColumn,
             _revenueColumn
         });
@@ -271,7 +274,11 @@ partial class SalesSummaryForm
         _productColumn.HeaderText = "Product";
         _productColumn.Name = "productColumn";
         _productColumn.ReadOnly = true;
-        _quantityColumn.FillWeight = 90F;
+        _cashierColumn.FillWeight = 130F;
+        _cashierColumn.HeaderText = "Cashier";
+        _cashierColumn.Name = "cashierColumn";
+        _cashierColumn.ReadOnly = true;
+        _quantityColumn.FillWeight = 80F;
         _quantityColumn.HeaderText = "Units Sold";
         _quantityColumn.Name = "quantityColumn";
         _quantityColumn.ReadOnly = true;
