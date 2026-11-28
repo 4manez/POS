@@ -1,0 +1,2 @@
+sale_id,sold_at,barcode,product_name,quantity,unit_price,line_total,sale_total,payment_method,cash_received,change,cashier
+20261128111454951,2026-11-28T11:14:54.9516803+08:00,748485100401,CENTURY TUNA FLAKES IN OIL,1,54.75,54.75,54.75,Cash,100.00,45.25,bernie

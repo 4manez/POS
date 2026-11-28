@@ -323,7 +323,7 @@ internal sealed class CsvDataStore
             CategoryId = updatedProduct.CategoryId,
             Price = updatedProduct.Price,
             Stock = existingProduct.Stock,
-            ImageFileName = existingProduct.ImageFileName,
+            ImageFileName = updatedProduct.ImageFileName.Trim(),
             LowStockThreshold = existingProduct.LowStockThreshold
         };
         products[productIndex] = savedProduct;

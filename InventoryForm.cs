@@ -392,7 +392,7 @@ internal partial class InventoryForm : Form
             Text = adding ? "Add New Item" : "Edit Item",
             FormBorderStyle = FormBorderStyle.FixedDialog,
             StartPosition = FormStartPosition.CenterParent,
-            ClientSize = adding ? new Size(480, 350) : new Size(480, 275),
+            ClientSize = adding ? new Size(480, 386) : new Size(480, 311),
             MaximizeBox = false,
             MinimizeBox = false,
             ShowInTaskbar = false
@@ -403,11 +403,11 @@ internal partial class InventoryForm : Form
             ColumnCount = 2,
             Dock = DockStyle.Fill,
             Padding = new Padding(16),
-            RowCount = adding ? 8 : 6
+            RowCount = adding ? 9 : 7
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140F));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        int fieldCount = adding ? 6 : 4;
+        int fieldCount = adding ? 7 : 5;
         for (int i = 0; i < fieldCount; i++)
         {
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
@@ -448,6 +448,13 @@ internal partial class InventoryForm : Form
         barcodeInput.Text = existingProduct?.Barcode ?? string.Empty;
         nameInput.Text = existingProduct?.Name ?? string.Empty;
         priceInput.Value = existingProduct?.Price ?? 0;
+
+        TextBox imageFileNameInput = new()
+        {
+            Dock = DockStyle.Fill,
+            Text = existingProduct?.ImageFileName ?? string.Empty,
+            PlaceholderText = "Optional image filename"
+        };
 
         TextBox stockInput = new()
         {
@@ -491,10 +498,11 @@ internal partial class InventoryForm : Form
         AddEditorRow(layout, 1, "Name:", nameInput);
         AddEditorRow(layout, 2, "Category:", categoryInput);
         AddEditorRow(layout, 3, "Price:", priceInput);
+        AddEditorRow(layout, 4, "Image filename:", imageFileNameInput);
         if (adding)
         {
-            AddEditorRow(layout, 4, "Stock:", stockInput);
-            AddEditorRow(layout, 5, "Low stock threshold:", thresholdInput);
+            AddEditorRow(layout, 5, "Stock:", stockInput);
+            AddEditorRow(layout, 6, "Low stock threshold:", thresholdInput);
         }
 
         layout.Controls.Add(errorLabel, 0, fieldCount);
@@ -542,7 +550,7 @@ internal partial class InventoryForm : Form
                 CategoryId = category.Id,
                 Price = priceInput.Value,
                 Stock = stock,
-                ImageFileName = existingProduct?.ImageFileName ?? string.Empty,
+                ImageFileName = imageFileNameInput.Text.Trim(),
                 LowStockThreshold = threshold
             };
 

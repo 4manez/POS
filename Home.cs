@@ -39,6 +39,7 @@ public partial class Home : Form
         _searchBox.KeyDown += SearchBox_KeyDown;
         _productList.SizeChanged += (_, _) => RefreshProducts();
         _cashBox.KeyDown += CashBox_KeyDown;
+        _cashBox.GotFocus += _cashBox_OnFocus;
         _cashBox.TextChanged += (_, _) => UpdateTotals();
         _buttonMinus.Click += (_, _) => ChangeSelectedQuantity(-1);
         _buttonPlus.Click += (_, _) => ChangeSelectedQuantity(1);
@@ -587,5 +588,10 @@ public partial class Home : Form
             ? string.Empty
             : $" | Branch: {_configuration.Branch}";
         _cashierLabel.Text = $"Cashier: {_cashierName}  |  Logout{branch}";
+    }
+
+    private void _cashBox_OnFocus(object? sender, System.EventArgs e)
+    {
+        _cashBox.Clear();
     }
 }
